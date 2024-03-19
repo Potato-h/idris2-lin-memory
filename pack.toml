@@ -1,0 +1,10 @@
+[custom.all.lin-memory]
+type = "local"
+path = "."
+ipkg = "lin-memory.ipkg"
+test = "test/test.ipkg"
+
+[custom.all.lin-memory-test]
+type = "local"
+path = "test"
+ipkg = "test.ipkg"
