@@ -12,13 +12,13 @@ public export
 sizeOf : (a : Type) -> {auto p : Trivial a} -> Int
 sizeOf _ = sizeof @{p}
 
-%foreign "C:read_ptr,libsmall"
+%foreign "C:read_ptr,libprimitives"
 readInt : AnyPtr -> (offset : Int) -> PrimIO Int
 
-%foreign "C:write_ptr,libsmall"
+%foreign "C:write_ptr,libprimitives"
 writeInt : AnyPtr -> (offset : Int) -> (value : Int) -> PrimIO ()
 
-%foreign "C:my_memcpy,libsmall"
+%foreign "C:my_memcpy,libprimitives"
 export memcpy : (dest : AnyPtr) -> (src : AnyPtr) -> (bytes : Int) -> PrimIO ()
 
 public export
