@@ -21,7 +21,7 @@ export
 setSameAt : (mp : CellMap) -> (idx : Nat) -> (i : Nat) -> setAt mp idx (mp idx) i = mp i
 setSameAt mp idx i with (i == idx) proof eq
     _ | False = Refl
-    _ | True = cong mp (sym $ fRepresentP @{NatEq} eq)
+    _ | True = cong mp (sym $ fRepresentP @{NatEq} {vs = [i, idx]} eq)
    
 export
 setSame : (mp : CellMap) -> (idx : Nat) -> setAt mp idx (mp idx) -=- mp 
@@ -33,18 +33,18 @@ setKnown mp idx prf = rewrite sym prf in setSame mp idx
 
 export
 setValueAt : (mp : CellMap) -> (i : Nat) -> {v : Cell} -> (setAt mp i v) i = v
-setValueAt mp i {v} = rewrite pRepresentF @{NatEq} {x=i} {y=i} Refl in Refl
+setValueAt mp i {v} = rewrite pRepresentF @{NatEq} {vs = [i, i]} Refl in Refl
 
 export
 setCancelAt : (mp : CellMap) -> (i : Nat) -> (setAt (setAt mp i v1) i v2) i = v2
-setCancelAt mp i = rewrite pRepresentF @{NatEq} {x=i} {y=i} Refl in Refl
+setCancelAt mp i = rewrite pRepresentF @{NatEq} {vs = [i, i]} Refl in Refl
 
 export
 setCancel : (mp : CellMap) -> (i : Nat) -> setAt (setAt mp i v1) i v2 -=- setAt mp i v2
 setCancel mp i = Ext $ \idx => case (idx `decEq` i) of 
-    (Yes prf) => rewrite prf in rewrite pRepresentF @{NatEq} {x=i} {y=i} Refl in Refl
-    (No contra) =>  rewrite notPThenFalse @{NatEq} contra in 
-                    rewrite notPThenFalse @{NatEq} contra in Refl
+    (Yes prf) => rewrite prf in rewrite pRepresentF @{NatEq} {vs = [i, i]} Refl in Refl
+    (No contra) =>  rewrite notPThenFalse @{NatEq} {vs = [idx,i]} contra in 
+                    rewrite notPThenFalse @{NatEq} {vs = [idx,i]}contra in Refl
 
 public export
 allEmpty : Nat -> CellMap
@@ -113,22 +113,24 @@ pushToPrefixPreservePrefix n k = Ext $ \i => lemma n k i
     lemma n k i with (i < n) proof i_less_n | (i == n) proof i_eq_n
         _ | False | False = 
             rewrite i_less_n in
-            rewrite i_more_n_then_i_less_s_n_is_absurd i n i_less_n (FalseThenNotP @{NatEq} i_eq_n) in
+            rewrite i_more_n_then_i_less_s_n_is_absurd i n i_less_n (FalseThenNotP @{NatEq} {vs = [i, n]} i_eq_n) in
             rewrite plusSuccRightSucc n k in
             case (i < n + S k) `decEq` True of 
                 (Yes prf) => rewrite prf in Refl 
                 (No contra) => rewrite notTrueIsFalse contra in Refl
         _ | False | True = 
-            rewrite fRepresentP @{NatEq} {x=i} {y=n} i_eq_n in let
-            n_less_s_n : (n < S n = True) = pRepresentF @{NatLT} reflexive
+            rewrite fRepresentP @{NatEq} {vs = [i, n]} i_eq_n in let
+            n_less_s_n : (n < S n = True) = pRepresentF @{NatLT} {vs = [n, S n]} reflexive
             in rewrite n_less_s_n in Refl
         _ | True | False =
-            rewrite i_less_n in 
-            let condCheck : (i < (S n) = True) = pRepresentF @{NatLT} $ transitive (fRepresentP @{NatLT} i_less_n) (lteSuccRight reflexive) in 
+            rewrite i_less_n in let
+                factCheck : (i `LT` S n) = transitive (fRepresentP @{NatLT} {vs = [i, n]} i_less_n) (lteSuccRight reflexive)
+                condCheck : (i < (S n) = True) = pRepresentF @{NatLT} {vs = [i, S n]} factCheck in 
             rewrite condCheck in
             Refl
-        _ | True | True = let 
-            condCheck : (i < (S n) = True) = pRepresentF @{NatLT} $ transitive (fRepresentP @{NatLT} i_less_n) (lteSuccRight reflexive) in 
+        _ | True | True = let
+                factCheck : (i `LT` S n) = transitive (fRepresentP @{NatLT} {vs = [i, n]} i_less_n) (lteSuccRight reflexive)
+                condCheck : (i < (S n) = True) = pRepresentF @{NatLT} {vs = [i, S n]} factCheck in
             rewrite condCheck in
             Refl
 
@@ -144,18 +146,18 @@ popFromPrefixPreservePrefix n k = Ext $ \i => lemma n k i
     lemma : (n, k, i : Nat) -> setAt (prefixMap (S n) k) n Empty i = prefixMap n (S k) i
     lemma n k i with (i < n) proof i_less_n | (i == n) proof i_eq_n
         _ | False | False = 
-            rewrite i_more_n_then_i_less_s_n_is_absurd i n i_less_n (FalseThenNotP @{NatEq} i_eq_n) in
+            rewrite i_more_n_then_i_less_s_n_is_absurd i n i_less_n (FalseThenNotP @{NatEq} {vs = [i, n]} i_eq_n) in
             rewrite plusSuccRightSucc n k in
             case (i < n + S k) `decEq` True of
                 (Yes prf) => rewrite prf in Refl
                 (No cont) => rewrite notTrueIsFalse cont in Refl
         _ | False | True = 
-            rewrite fRepresentP @{NatEq} {x=i} {y=n} i_eq_n in
+            rewrite fRepresentP @{NatEq} {vs = [i, n]} i_eq_n in
             rewrite n_less_n_plus_k n k in
             Refl
         _ | True | False = let 
-            condCheck : (i < (S n) = True) = pRepresentF @{NatLT} $ transitive (fRepresentP @{NatLT} i_less_n) (lteSuccRight reflexive) in 
+            condCheck : (i < (S n) = True) = pRepresentF @{NatLT} {vs = [i, S n]} $ transitive (fRepresentP @{NatLT} {vs = [i, n]} i_less_n) (lteSuccRight reflexive) in 
             rewrite condCheck in
             Refl
-        _ | True | True = absurd $ n_less_n_is_absurd n (replace {p = \h => h < n = True} (fRepresentP @{NatEq} i_eq_n) i_less_n)
+        _ | True | True = absurd $ n_less_n_is_absurd n (replace {p = \h => h < n = True} (fRepresentP @{NatEq} {vs = [i, n]} i_eq_n) i_less_n)
 

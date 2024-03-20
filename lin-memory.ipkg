@@ -13,7 +13,7 @@ authors = "Ilya Shpilkov"
 -- langversion
 
 -- packages to add to search path
--- depends =
+depends = contrib
 
 -- modules to install
 modules = Mem.Maps
