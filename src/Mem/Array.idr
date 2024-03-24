@@ -10,12 +10,12 @@ public export
 CRes a b = Res a (const b)
 
 public export
-record Ur (a : Type) where
+record Ur a where
     constructor MkUr
     inner : a
 
 public export
-record Array (a : Type) (cm : CellMap) where
+record Array (0 a : Type) (0 cm : CellMap) where
     constructor MkArray
     buffer : AnyPtr
 
@@ -25,20 +25,18 @@ transport (MkArray buffer) _ = MkArray buffer
 
 export
 read : 
-    {a : Type} ->
-    {auto p : Trivial a} ->
+    Trivial a =>
     (1 arr : Array a cm) -> 
     (i : Nat) -> 
     (0 prf : cm i = NonEmpty) -> 
     CRes a (Array a cm)
 read (MkArray buffer) i _ = let
     idx = cast i 
-    val = unsafePerformIO $ primIO (readBy @{p} buffer idx)
+    val = unsafePerformIO $ primIO (readBy buffer idx)
     in val # MkArray buffer
 
 export
 write : 
-    {a : Type} ->
     Trivial a =>
     (1 arr : Array a cm) -> 
     (i : Nat) -> 
@@ -53,8 +51,7 @@ write (MkArray buffer) i _ val = let
 
 export
 discard :
-    {a : Type} ->
-    {auto p : Trivial a} ->
+    Trivial a =>
     (1 arr : Array a cm) ->
     (i : Nat) ->
     (0 prf : cm i = NonEmpty) ->
@@ -63,7 +60,6 @@ discard (MkArray buffer) _ _ = MkArray buffer
 
 export
 updateAt : 
-    {a : Type} ->
     Trivial a =>
     (1 arr : Array a cm) ->
     (i : Nat) ->
@@ -77,7 +73,7 @@ updateAt arr i prf f = let
     in transport arr (setCancel cm i `transitive` setKnown cm i prf)
 
 export
-withArray : {a : Type} -> Trivial a => (n : Nat) -> (1 f : (1 arr : Array a (allEmpty n)) -> Ur b) -> b
+withArray : Trivial a => (n : Nat) -> (1 f : (1 arr : Array a (allEmpty n)) -> Ur b) -> b
 withArray n f = let
     buff = unsafePerformIO $ malloc (sizeOf a * cast n)
     arr = MkArray buff
@@ -96,7 +92,6 @@ finish (MkArray buffer) res = unsafePerformIO $ do
 
 export
 alloc : 
-    {a : Type} ->
     Trivial a =>
     (m : Nat) ->
     (1 src : Array a cm) ->
@@ -105,7 +100,6 @@ alloc m src = src # MkArray (unsafePerformIO $ malloc (sizeOf a * cast m))
 
 export 
 copy : 
-    {a : Type} ->
     Trivial a =>
     (n : Nat) ->
     (1 src : Array a (allNonEmpty n)) ->

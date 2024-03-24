@@ -1,7 +1,7 @@
 module Mem.Primitives
 
 public export
-interface Trivial (a : Type) where
+interface Trivial a where
     sizeof : Int
 
     readBy : AnyPtr -> (offset : Int) -> PrimIO a
@@ -9,7 +9,7 @@ interface Trivial (a : Type) where
     writeBy : AnyPtr -> (offset : Int) -> (value : a) -> PrimIO ()
 
 public export
-sizeOf : (a : Type) -> {auto p : Trivial a} -> Int
+sizeOf : (0 a : Type) -> {auto p : Trivial a} -> Int
 sizeOf _ = sizeof @{p}
 
 %foreign "C:read_ptr,libprimitives"

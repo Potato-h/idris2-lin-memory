@@ -12,15 +12,15 @@ record Vector (a : Type) where
     1 elems : Array a (prefixMap len rest)
 
 export
-withVector : {a : Type} -> Trivial a => (1 f : (1 arr : Vector a) -> Ur b) -> b
-withVector f = withArray 4 (\arr => f $ MkVect 0 4 (transport arr (symmetric $ emptyPrefix 4)))
+withVector : Trivial a => (1 f : (1 arr : Vector a) -> Ur b) -> b
+withVector f = withArray initialCapacity (\arr => f $ MkVect 0 _ (transport arr (symmetric $ emptyPrefix _)))
 
 export
 vLenght : (1 arr : Vector a) -> CRes Nat (Vector a)
 vLenght (MkVect len rest elems) = len # (MkVect len rest elems)
 
 export
-push : {a : Type} -> Trivial a => (1 this : Vector a) -> a -> Vector a
+push : Trivial a => (1 this : Vector a) -> a -> Vector a
 push (MkVect len 0 elems) x = let
     old # new = alloc (len + len) elems
     old = transport old (emptySuffix len)
@@ -37,7 +37,7 @@ push (MkVect len (S k) elems) x = let
         rewrite n_less_n_plus_k n k in Refl
 
 export
-pop : {a : Type} -> Trivial a => (1 this : Vector a) -> CRes (Maybe a) (Vector a)
+pop : Trivial a => (1 this : Vector a) -> CRes (Maybe a) (Vector a)
 pop (MkVect 0 rest elems) = Nothing # MkVect 0 rest elems
 pop (MkVect (S k) rest elems) = let
     x # elems' = read elems k (correctAccess k rest)
