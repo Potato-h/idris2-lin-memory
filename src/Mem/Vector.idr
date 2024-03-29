@@ -20,6 +20,10 @@ vLenght : (1 arr : Vector a) -> CRes Nat (Vector a)
 vLenght (MkVect len rest elems) = len # (MkVect len rest elems)
 
 export
+isEmpty : (1 arr : Vector a) -> CRes Bool (Vector a)
+isEmpty arr = let (len # arr) = vLenght arr in len == 0 # arr
+
+export
 push : Trivial a => (1 this : Vector a) -> a -> Vector a
 push (MkVect len 0 elems) x = let
     old # new = alloc (len + len) elems
@@ -49,5 +53,5 @@ pop (MkVect (S k) rest elems) = let
 
 export
 vFinish : (1 arr : Vector a) -> b -> Ur b
-vFinish (MkVect len rest elems) v = finish elems v
+vFinish (MkVect len rest elems) v = Array.finish elems v
 

@@ -24,6 +24,7 @@ modules = Mem.Maps
         , Mem.Represent
         , Mem.Extensionality
         , Mem.Primitives
+        , Mem.Queue
 
 -- main file (i.e. file to load at REPL)
 -- main =
