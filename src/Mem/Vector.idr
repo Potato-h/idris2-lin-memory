@@ -5,11 +5,14 @@ import Control.Relation
 import Data.Nat
 
 export
-record Vector (a : Type) where
+record Vector a where
     constructor MkVect
     len : Nat
     rest : Nat
     1 elems : Array a (prefixMap len rest)
+
+initialCapacity : Nat
+initialCapacity = 2
 
 export
 withVector : Trivial a => (1 f : (1 arr : Vector a) -> Ur b) -> b
