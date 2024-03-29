@@ -14,9 +14,13 @@ authors = "Ilya Shpilkov"
 
 -- packages to add to search path
 depends = lin-memory
+        , linear
+        , random-pure
+        , profiler
 
 -- modules to install
--- modules =
+modules = Tests.Simple
+        , Bench.Compare
 
 -- main file (i.e. file to load at REPL)
 main = Main
