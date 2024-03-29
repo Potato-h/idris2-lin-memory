@@ -16,6 +16,7 @@ prebuild = "cc -shared primitives.c -o libprimitives.so"
 
 -- packages to add to search path
 depends = contrib
+        , sop
 
 -- modules to install
 modules = Mem.Maps
