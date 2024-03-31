@@ -12,7 +12,7 @@ authors = "Ilya Shpilkov"
 -- the Idris2 version required (e.g. langversion >= 0.5.1)
 -- langversion
 
-prebuild = "cc -shared primitives.c -o libprimitives.so"
+-- prebuild = "cc -shared primitives.c -o libprimitives.so"
 
 -- packages to add to search path
 depends = contrib

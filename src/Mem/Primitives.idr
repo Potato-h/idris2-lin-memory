@@ -17,14 +17,24 @@ public export
 sizeOf : (0 a : Type) -> {auto p : Trivial a} -> Int
 sizeOf _ = sizeof @{p}
 
-%foreign "C:read_ptr,libprimitives"
+export %foreign "scheme,chez:foreign-alloc"
+malloc : (bytes : Int) -> PrimIO AnyPtr
+
+export %foreign "scheme,chez:foreign-free"
+free : (ptr : AnyPtr) -> PrimIO ()
+
+-- FIXME:
+%foreign "scheme,chez:(foreign-sizeof 'int)"
+sizeOfInt : Int
+
+%foreign "scheme,chez:(lambda (ptr offset) (foreign-ref 'int ptr (* offset (foreign-sizeof 'int))))"
 readInt : AnyPtr -> (offset : Int) -> PrimIO Int
 
-%foreign "C:write_ptr,libprimitives"
+%foreign "scheme,chez:(lambda (ptr offset value) (foreign-set! 'int ptr (* offset (foreign-sizeof 'int)) value))"
 writeInt : AnyPtr -> (offset : Int) -> (value : Int) -> PrimIO ()
 
-%foreign "C:my_memcpy,libprimitives"
-export memcpy : (dest : AnyPtr) -> (src : AnyPtr) -> (bytes : Int) -> PrimIO ()
+export %foreign "scheme,chez:(foreign-procedure \"memcpy\" (void* void* int) void)"
+memcpy : (dest : AnyPtr) -> (src : AnyPtr) -> (bytes : Int) -> PrimIO ()
 
 public export
 Trivial Int where

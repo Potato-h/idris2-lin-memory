@@ -2,7 +2,6 @@ module Mem.Array
 
 import public Mem.Maps
 import public Mem.Primitives
-import System.FFI
 import Control.Relation
 
 public export
@@ -75,7 +74,7 @@ updateAt arr i prf f = let
 export
 withArray : Trivial a => (n : Nat) -> (1 f : (1 arr : Array a (allEmpty n)) -> Ur b) -> b
 withArray n f = let
-    buff = unsafePerformIO $ malloc (sizeOf a * cast n)
+    buff = unsafePerformIO $ primIO $ malloc (sizeOf a * cast n)
     arr = MkArray buff
     MkUr w = f arr
     in w
@@ -86,7 +85,7 @@ finish :
     b ->
     Ur b
 finish (MkArray buffer) res = unsafePerformIO $ do
-    free buffer
+    primIO $ free buffer
     pure $ MkUr res
 
 
@@ -96,7 +95,7 @@ alloc :
     (m : Nat) ->
     (1 src : Array a cm) ->
     LPair (Array a cm) (Array a (allEmpty m))
-alloc m src = src # MkArray (unsafePerformIO $ malloc (sizeOf a * cast m)) 
+alloc m src = src # MkArray (unsafePerformIO $ primIO $ malloc (sizeOf a * cast m)) 
 
 export 
 copy : 
