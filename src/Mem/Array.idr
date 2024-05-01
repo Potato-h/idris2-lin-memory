@@ -13,10 +13,15 @@ record Ur a where
     constructor MkUr
     inner : a
 
-public export
+export
 record Array (0 a : Type) (0 cm : CellMap) where
     constructor MkArray
     buffer : AnyPtr
+
+-- FIXME: Does public API really need this?
+export 
+getBuffer : (1 arr : Array a cm) -> CRes AnyPtr (Array a cm)
+getBuffer (MkArray buffer) = buffer # MkArray buffer
 
 export
 transport : (1 arr : Array a cm1) -> (0 _ : cm1 -=- cm2) -> Array a cm2

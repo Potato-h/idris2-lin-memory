@@ -82,6 +82,10 @@ emptyPrefix n = Ext $ \i =>
         (No contra) => rewrite notTrueIsFalse contra in Refl
 
 export
+correctAccessForPrefix : (i < n = True) -> prefixMap n k i = NonEmpty
+correctAccessForPrefix prf = rewrite prf in Refl
+
+export
 n_less_n_is_absurd : (n : Nat) -> n < n = False
 n_less_n_is_absurd 0 = Refl
 n_less_n_is_absurd (S k) = n_less_n_is_absurd k

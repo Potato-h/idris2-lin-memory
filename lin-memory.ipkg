@@ -1,5 +1,5 @@
 package lin-memory
-version = 0.1.0
+version = 0.2.0
 authors = "Ilya Shpilkov"
 -- maintainers =
 -- license =
@@ -22,6 +22,8 @@ depends = contrib
 modules = Mem.Maps
         , Mem.Array
         , Mem.Vector
+        , Mem.Slice
+        , Mem.MArray
         , Mem.Represent
         , Mem.Extensionality
         , Mem.Primitives
