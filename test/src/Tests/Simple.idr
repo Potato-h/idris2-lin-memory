@@ -1,8 +1,10 @@
 module Tests.Simple
 
 import Mem.Vector
+import Mem.Slice
 import Mem.Array
 import Mem.Queue
+import Debug.Trace
 
 example1 : (1 arr : Vector Int) -> Ur (List (Maybe Int)) 
 example1 v = let
@@ -46,3 +48,50 @@ withWithExample =
     withVector {a = Int} $ \vec2 => 
     let (MkUr ()) = vFinish vec1 ()
     in vFinish vec2 (MkUr 10)
+
+export
+simpleInit : List Int -> Nat
+simpleInit xs = withVectorFromList xs $ \vec => let
+    len # vec = vLenght vec
+    in vFinish vec len
+
+export
+emptyInit : () -> Nat
+emptyInit () = withVector {a = Int} $ \vec => let
+    len # vec = vLenght vec
+    in vFinish vec len
+
+export
+buildStuff : List Int -> List Int
+buildStuff xs = withVectorFromList xs $ \vec => let
+    res # vec = vec.asSlice $ \n, sl => let
+        res # sl = Slice.foldl (::) [] n sl
+        in res # sl
+    in vFinish vec (reverse res)
+
+export
+partitionExample : Int -> List Int -> List Int
+partitionExample bound xs = withVectorFromList xs $ \vec => let
+    res # vec = vec.asSlice $ \n, sl => let
+        _ # sl = Slice.partition (< bound) n sl
+        res # sl = Slice.foldl (::) [] n sl
+        in res # sl
+    in vFinish vec (reverse res)
+
+export
+partition'Example : Int -> List Int -> List Int
+partition'Example bound xs = withVectorFromList xs $ \vec => let
+    res # vec = vec.asSlice $ \n, sl => let
+        _ # sl = Slice.partition' bound n sl
+        res # sl = Slice.foldl (::) [] n sl
+        in res # sl
+    in vFinish vec (reverse res)
+
+export
+sortExample : List Int -> List Int
+sortExample xs = withVectorFromList xs $ \vec => let
+    res # vec = vec.asSlice $ \n, sl => let
+        sl = Slice.quickSort n sl
+        res # sl = Slice.foldl (::) [] n sl
+        in res # sl
+    in vFinish vec (reverse res)

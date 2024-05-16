@@ -2,26 +2,29 @@ module Main
 
 import Profile
 import Bench.Compare
+import Tests.Simple
+import Data.List
+import Decidable.Equality
+import TimeIt
 
-data Fmt = FArg Fmt | FChar Char Fmt | FEnd
+sort : Ord a => List a -> List a
+sort xs = if length xs < 2 
+    then xs
+    else let
+        pivot = List.index (length xs `div` 2) xs @{believe_me ()}
+        lhs = filter (< pivot) xs
+        center = filter (== pivot) xs
+        rhs = filter (> pivot) xs
+        in Main.sort lhs ++ center ++ Main.sort rhs 
 
-toFmt : (fmt : List Char) -> Fmt
-toFmt ('{' :: '}' :: xs) = FArg (toFmt xs)
-toFmt (  x :: xs) = FChar x (toFmt xs)
-toFmt [] = FEnd
+n : Nat
+n = 500_000
 
-PrintfType : (fmt : Fmt) -> Type
-PrintfType (FArg fmt) = ({ty : Type} -> Show ty => (obj : ty) -> PrintfType fmt)
-PrintfType (FChar _ fmt) = PrintfType fmt
-PrintfType FEnd = String
-
-printf : (fmt : String) -> PrintfType (toFmt $ unpack fmt)
-printf fmt = printfAux (toFmt $ unpack fmt) [] where
-    printfAux : (fmt : Fmt) -> List Char -> PrintfType fmt
-    printfAux (FArg fmt) acc = \obj => printfAux fmt (acc ++ unpack (show obj))
-    printfAux (FChar c fmt) acc = printfAux fmt (acc ++ [c])
-    printfAux FEnd acc = pack acc
+xs : List Int
+xs = genN n nxtR 5
 
 main : IO ()
 main = do
-    runDefault (const True) Details absurd bench
+    -- runDefault (const True) Details absurd intBench
+    runDefault (const True) Details absurd sortBench
+    runDefault (const True) Details absurd partitionBench

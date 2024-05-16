@@ -3,10 +3,13 @@ module Bench.Compare
 import Data.Stream
 import Mem.Vector
 import Mem.Array
+import Data.List
 import Profile
 import Control.Monad.State.State
 import Control.Monad.State.Interface
 import Control.Monad.Identity
+import Decidable.Equality
+import Tests.Simple
 
 data Op = Add | Sub | Mul | Div
 
@@ -77,23 +80,27 @@ eval' toks = evalState [] (go toks)
         modify (i ::)
         go toks
 
-eval'' : List Token -> Maybe Int
-eval'' toks = ?later
-    where
-    go : List Token -> (1 _ : List Int) -> CRes (Maybe Int) (List Int)
-    go [] st = ?goal_0
-    go ((TOp x) :: xs) st = ?goal_2
-    go ((Value i) :: xs) st = go xs ?lllll
-
-
 tree : Nat -> List Token
 tree n = exprToTokens $ makeExpr n (iterate (+1) 0)
+
+export
+nxtR : Int -> Int
+nxtR x = (13 + x * 127) `mod` 1000
+
+linearSum : Nat -> List Token
+linearSum n = map Value (take (S n) (iterate nxtR 0)) ++ List.replicate n (TOp Add)
 
 evalMemBench : Nat -> Benchmark Void
 evalMemBench n = let toks = tree n in Single "length = \{show $ length toks}" (basic eval toks) 
 
+evalMemBenchFold : Nat -> Benchmark Void
+evalMemBenchFold n = let toks = linearSum n in Single "length = \{show n}" (basic eval toks)
+
 evalMonadBench : Nat -> Benchmark Void
 evalMonadBench n = let toks = tree n in Single "length = \{show $ length toks}" (basic eval' toks)
+
+evalMonadBenchFold : Nat -> Benchmark Void
+evalMonadBenchFold n = let toks = linearSum n in Single "length = \{show n}" (basic eval' toks)
 
 export
 bench : Benchmark Void
@@ -103,11 +110,172 @@ bench = Group "Benches"
             [ evalMemBench 10
             , evalMemBench 15
             , evalMemBench 20
+            , evalMemBenchFold 2_000_000
             ] 
         , Group "monad"
             [ evalMonadBench 10
             , evalMonadBench 15
             , evalMonadBench 20
+            , evalMonadBenchFold 2_000_000
             ]
         ]
+    ]
+
+goUp : Nat -> Nat
+goUp to = let
+    go : Nat -> Nat -> Nat
+    go i acc = case decEq (i < to) True of
+        (Yes prf) => go (S i) (acc + i)
+        (No contra) => acc
+    in go 0 0
+
+goUpCase : Nat -> Nat
+goUpCase to = let
+    go : Nat -> Nat -> Nat
+    go i acc = case i < to of 
+        True => go (S i) (acc + i) 
+        False => acc
+    in go 0 0
+
+goUpIf : Nat -> Nat
+goUpIf to = let
+    go : Nat -> Nat -> Nat
+    go i acc = if i < to then go (S i) (acc + i) else acc
+    in go 0 0
+
+-- CompilesInto
+-- goUpInt
+-- Can be dramaticly speed up with fx+ instead of bs+
+-- (define BenchC-45Compare-n--6599-4082-u--go (lambda (arg-0 arg-1 arg-2) (let ((sc0 (PreludeC-45EqOrd-u--C-60_Ord_Int arg-1 arg-0))) (cond ((equal? sc0 1) (BenchC-45Compare-n--6599-4082-u--go arg-0 (bs+ arg-1 1 63) (bs+ arg-2 arg-1 63))) (else arg-2)))))
+goUpInt : Int -> Int
+goUpInt to = let
+    go : Int -> Int -> Int
+    go i acc = if i < to then go (i + 1) (acc + i) else acc
+    in go 0 0
+
+-- CompilesInto
+-- goUpInteger
+-- (define BenchC-45Compare-n--6653-4133-u--go (lambda (arg-0 arg-1 arg-2) (let ((sc0 (PreludeC-45EqOrd-u--C-60_Ord_Integer arg-1 arg-0))) (cond ((equal? sc0 1) (BenchC-45Compare-n--6653-4133-u--go arg-0 (+ arg-1 1) (+ arg-2 arg-1))) (else arg-2)))))
+goUpInteger : Integer -> Integer
+goUpInteger to = let
+    go : Integer -> Integer -> Integer
+    go i acc = if i < to then go (i + 1) (acc + i) else acc
+    in go 0 0
+
+goUpIntegerWithCast : Integer -> Integer
+goUpIntegerWithCast to = let
+    go : Integer -> Integer -> Integer
+    go i acc = let
+        acc : Int = cast acc
+        acc : Integer = cast acc
+        in if i < to then go (i + 1) (acc + i) else acc
+    in go 0 0
+
+goUpNatWithCast : Nat -> Nat
+goUpNatWithCast to = let
+    go : Nat -> Nat -> Nat
+    go i acc = let
+        acc : Int = cast acc
+        acc : Nat = cast acc
+        in if i < to then go (i + 1) (acc + i) else acc
+    in go 0 0
+
+goUpNatWithCastInteger : Nat -> Nat
+goUpNatWithCastInteger to = let
+    go : Nat -> Nat -> Nat
+    go i acc = let
+        acc : Integer = cast acc
+        acc : Nat = cast acc
+        in if i < to then go (i + 1) (acc + i) else acc
+    in go 0 0
+
+goUpDecWithCast : Nat -> Nat
+goUpDecWithCast to = let
+    go : Nat -> Nat -> Nat
+    go i acc = case decEq (i < to) True of
+        (Yes prf) => let 
+            acc : Integer = cast acc
+            acc : Nat = cast acc
+            in go (S i) (acc + i)
+        (No contra) => acc
+    in go 0 0
+
+
+
+export
+intBench : Benchmark Void
+intBench = let 
+    nNat : Nat = 500_000
+    nInt : Int = 500_000
+    nInteger : Integer = 500_000
+    in Group "GoUp"
+    [ Single "NatDec" (basic goUp nNat)
+    , Single "NatCase" (basic goUpCase nNat)
+    , Single "NatIf" (basic goUpIf nNat)
+    , Single "Int" (basic goUpInt nInt)
+    , Single "Integer" (basic goUpInteger nInteger)
+    , Single "IntegerCast" (basic goUpIntegerWithCast nInteger)
+    , Single "NatCast" (basic goUpNatWithCast nNat)
+    , Single "NatCastInteger" (basic goUpNatWithCastInteger nNat)
+    , Single "DecWithCast" (basic goUpDecWithCast nNat)
+    ]
+
+partition' : (a -> Bool) -> List a -> List a
+partition' p xs = let (l, r) = partition p xs in l ++ r
+
+export
+genN : Nat -> (a -> a) -> a -> List a
+genN n f x = let
+    go : Nat -> List a -> a -> List a
+    go 0 xs acc = xs
+    go (S k) xs acc = go k (acc :: xs) (f acc)  
+    in go n [] x
+
+
+export 
+simpleInitPure : List a -> List a
+simpleInitPure = Prelude.foldl (\acc, x => Basics.(::) x acc) []
+
+-- ~ 17ns per push_back without allocations in idris
+-- ~ 1.6ns per push_back without allocations in rust
+export
+partitionBench : Benchmark Void
+partitionBench = let
+    n = 500_000
+    xs = genN n nxtR 5
+    in Group "Partition" 
+    [ Single "Pure" (basic (partition (< 400)) xs)
+    , Single "Pure'" (basic (partition' (< 400)) xs)
+    , Single "ListLength" (basic length xs)
+    , Single "Gen" (basic (\n => genN n nxtR 5) n)
+    , Single "Linear" (basic (partitionExample 400) xs)
+    , Single "Linear'" (basic (partition'Example 400) xs)
+    , Single "BuildList" (basic buildStuff xs)
+    , Single "SimpleInit" (basic simpleInit xs)
+    , Single "SimpleInitPure" (basic simpleInitPure xs)
+    , Single "EmptyInit" (basic emptyInit ())
+    , Single "SingleCon" (basic (\x => Basics.(::) 10 x) [1, 2, 3])
+    , Single "SingleInit" (basic simpleInit [10])
+    ]
+
+
+quicksort : Ord a => List a -> List a
+quicksort xs = if length xs < 2 
+    then xs
+    else let
+        pivot = List.index (length xs `div` 2) xs @{believe_me ()}
+        lhs = filter (< pivot) xs
+        center = filter (== pivot) xs
+        rhs = filter (> pivot) xs
+        in quicksort lhs ++ center ++ quicksort rhs 
+
+export
+sortBench : Benchmark Void
+sortBench = let
+    n = 500_000
+    xs = genN n nxtR 5
+    in Group "Sort"
+    [ Single "Linear" (basic sortExample xs)
+    , Single "Pure" (basic quicksort xs)
+    , Single "BuildList" (basic buildStuff xs)
     ]
