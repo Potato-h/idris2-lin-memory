@@ -11,34 +11,35 @@ import Decidable.Equality
 public export
 record Slice (0 n : Nat) (0 a : Type) where
     constructor MkSlice
-    offset : Nat
+    -- offset : Nat
     -- 0 cm : CellMap
     -- 0 prf : (i : Nat) -> (0 _ : i `LT` n) -> cm (offset + i) = NonEmpty 
     -- 1 sl : Array a cm
     buffer : AnyPtr
 
 export 
-splitAt : (n : Nat) -> (1 sl : Slice (n + m) a) -> LPair (Slice n a) (Slice m a)
-splitAt n (MkSlice offset buffer) = MkSlice offset buffer # MkSlice (offset + n) buffer 
+splitAt : (p : Trivial a) => (n : Nat) -> (1 sl : Slice (n + m) a) -> LPair (Slice n a) (Slice m a)
+splitAt n (MkSlice buffer) = MkSlice buffer # MkSlice (shiftPtr @{p} buffer (cast n)) 
 
 unsafeDestroyWorld : (1 x : %World) -> a -> a
 unsafeDestroyWorld %MkWorld x = x
 
 export
 discard : (1 sl : Slice n a) -> ()
-discard (MkSlice _ _) = ()
+discard (MkSlice _) = ()
 
 export
-splitAtCont : 
+splitAtCont :
+    (p : Trivial a) =>
     (n : Nat) -> 
     (1 sl : Slice (n + m) a) -> 
     (1 f : (1 _ : Slice n a) -> (1 _ : Slice m a) -> (1 tok : %World) -> CRes b (LPair %World (LPair (Slice n a) (Slice m a)))) 
     -> CRes b (Slice (n + m) a)
-splitAtCont n (MkSlice offset buffer) f = let
-    v # (tok # (x # y)) = f (MkSlice offset buffer) (MkSlice (offset + n) buffer) %MkWorld
+splitAtCont n (MkSlice buffer) f = let
+    v # (tok # (x # y)) = f (MkSlice buffer) (MkSlice (shiftPtr @{p} buffer (cast n))) %MkWorld
     () = Slice.discard x
     () = Slice.discard y
-    in v # unsafeDestroyWorld tok (MkSlice offset buffer)
+    in v # unsafeDestroyWorld tok (MkSlice buffer)
 
 export
 get : 
@@ -47,10 +48,10 @@ get :
     (i : Nat) -> 
     (0 prf : i < n = True) -> 
     CRes a (Slice n a)
-get (MkSlice offset buffer) i _ = let
-    idx = cast (offset + i) 
+get (MkSlice buffer) i _ = let
+    idx = cast i 
     val = unsafePerformIO $ primIO (readBy buffer idx)
-    in val # MkSlice offset buffer
+    in val # MkSlice buffer
 
 export
 set : 
@@ -60,11 +61,11 @@ set :
     (0 prf : i < n = True) -> 
     a -> 
     Slice n a
-set (MkSlice offset buffer) i _ val = let
-    idx = cast (offset + i)
+set (MkSlice buffer) i _ val = let
+    idx = cast i
     in unsafePerformIO $ do
         primIO (writeBy buffer idx val)
-        pure (MkSlice offset buffer)
+        pure (MkSlice buffer)
 
 export
 updateAt : 
@@ -98,7 +99,7 @@ finish :
     (1 sl : Slice n a) ->
     b ->
     Ur b
-finish (MkSlice _ _) res = MkUr res
+finish (MkSlice _) res = MkUr res
 
 find_if : Trivial a => (a -> Bool) -> (n : Nat) -> (1 sl : Slice n a) -> CRes (Maybe Nat) (Slice n a)
 find_if p n sl = let
@@ -131,6 +132,7 @@ partition p n sl = let
         (Just fst_not) => go fst_not (S fst_not) sl
         Nothing => n # sl
 
+export
 partition' : Ord a => Trivial a => a -> (n : Nat) -> (1 sl : Slice n a) -> CRes Nat (Slice n a)
 partition' v n sl = let
     go : Nat -> Nat -> (1 sl : Slice n a) -> CRes Nat (Slice n a)
@@ -167,7 +169,7 @@ quickSort n sl = if n <= 1
     then sl
     else let
         pivot # sl = get sl (n `div` 2) (believe_me ())
-        border # sl = partition (< pivot) n sl
+        border # sl = partition' pivot n sl
         correctBorder : Nat -> (1 sl : Slice n a) -> CRes Nat (Slice n a)
         correctBorder n sl = if border == 0
             then S border # Slice.swap sl 0 (n `div` 2) (believe_me ()) (believe_me ())
@@ -180,4 +182,3 @@ quickSort n sl = if n <= 1
                 rhs = quickSort rest rhs
                 in () # (tok # (lhs # rhs))
         in rewrite (sym $ prf) in sl
-           
