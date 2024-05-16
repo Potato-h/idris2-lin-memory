@@ -13,10 +13,11 @@ authors = "Ilya Shpilkov"
 -- langversion
 
 -- packages to add to search path
-depends = lin-memory
+depends = lin-memory >= 0.2.0
         , linear
         , random-pure
         , profiler
+        , timeit
 
 -- modules to install
 modules = Tests.Simple
