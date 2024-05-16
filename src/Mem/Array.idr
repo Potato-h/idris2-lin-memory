@@ -27,9 +27,10 @@ export
 transport : (1 arr : Array a cm1) -> (0 _ : cm1 -=- cm2) -> Array a cm2
 transport (MkArray buffer) _ = MkArray buffer
 
+%spec p
 export
 read : 
-    Trivial a =>
+    (p : Trivial a) =>
     (1 arr : Array a cm) -> 
     (i : Nat) -> 
     (0 prf : cm i = NonEmpty) -> 
@@ -39,9 +40,10 @@ read (MkArray buffer) i _ = let
     val = unsafePerformIO $ primIO (readBy buffer idx)
     in val # MkArray buffer
 
+%spec p
 export
 write : 
-    Trivial a =>
+    (p : Trivial a) =>
     (1 arr : Array a cm) -> 
     (i : Nat) -> 
     (0 prf : cm i = Empty) -> 
@@ -76,8 +78,9 @@ updateAt arr i prf f = let
     arr = write arr i (setValueAt cm i) (f x)
     in transport arr (setCancel cm i `transitive` setKnown cm i prf)
 
+%spec p
 export
-withArray : Trivial a => (n : Nat) -> (1 f : (1 arr : Array a (allEmpty n)) -> Ur b) -> b
+withArray : (p : Trivial a) => (n : Nat) -> (1 f : (1 arr : Array a (allEmpty n)) -> Ur b) -> b
 withArray n f = let
     buff = unsafePerformIO $ primIO $ malloc (sizeOf a * cast n)
     arr = MkArray buff
