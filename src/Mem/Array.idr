@@ -64,9 +64,10 @@ discard :
     Array a (setAt cm i Empty)
 discard (MkArray buffer) _ _ = MkArray buffer
 
+%spec p
 export
 updateAt : 
-    Trivial a =>
+    (p : Trivial a) =>
     (1 arr : Array a cm) ->
     (i : Nat) ->
     (0 prf : cm i = NonEmpty) ->
@@ -78,7 +79,7 @@ updateAt arr i prf f = let
     arr = write arr i (setValueAt cm i) (f x)
     in transport arr (setCancel cm i `transitive` setKnown cm i prf)
 
-%spec p
+%spec p, f
 export
 withArray : (p : Trivial a) => (n : Nat) -> (1 f : (1 arr : Array a (allEmpty n)) -> Ur b) -> b
 withArray n f = let

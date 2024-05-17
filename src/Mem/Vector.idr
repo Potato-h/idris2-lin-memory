@@ -17,12 +17,13 @@ record Vector a where
 initialCapacity : Nat
 initialCapacity = 2
 
+%spec p, f
 export
-withVector : Trivial a => (1 f : (1 arr : Vector a) -> Ur b) -> b
+withVector : (p : Trivial a) => (1 f : (1 arr : Vector a) -> Ur b) -> b
 withVector f = withArray initialCapacity (\arr => f $ MkVect 0 _ (transport arr (symmetric $ emptyPrefix _)))
 
 -- FIXME: cap = 0 is ill formed
-%spec p
+%spec p, f
 export
 withVectorCap : (p : Trivial a) => Nat -> (1 f : (1 arr : Vector a) -> Ur b) -> b
 withVectorCap cap f = withArray cap (\arr => f $ MkVect 0 _ (transport arr (symmetric $ emptyPrefix _)))
@@ -63,8 +64,9 @@ push (MkVect len 0 elems) x = let
     in tryPush len len x new
 push (MkVect len (S k) elems) x = strongPush len k x elems
 
+%spec p
 export
-pop : Trivial a => (1 this : Vector a) -> CRes (Maybe a) (Vector a)
+pop : (p : Trivial a) => (1 this : Vector a) -> CRes (Maybe a) (Vector a)
 pop (MkVect 0 rest elems) = Nothing # MkVect 0 rest elems
 pop (MkVect (S k) rest elems) = let
     x # elems' = read elems k (correctAccess k rest)
@@ -75,15 +77,16 @@ pop (MkVect (S k) rest elems) = let
     correctAccess n k = rewrite n_less_s_n n in Refl
 
 %spec p
-export
-extend : (p : Trivial a) => Foldable t => (1 this : Vector a) -> t a -> Vector a
-extend this vals = go this (toList vals)
-    where
-    go : (1 _ : Vector a) -> List a -> Vector a
-    go vec [] = vec
-    go vec (x :: xs) = go (push vec x) xs
+extendFromList : (p : Trivial a) => (1 this : Vector a) -> List a -> Vector a
+extendFromList vec [] = vec
+extendFromList vec (x :: xs) = extendFromList (push vec x) xs
 
 %spec p
+export
+extend : (p : Trivial a) => Foldable t => (1 this : Vector a) -> t a -> Vector a
+extend this vals = extendFromList this (toList vals)
+
+%spec p, f
 export
 withVectorFromList : (p : Trivial a) => Foldable t => t a -> (1 f : (1 arr : Vector a) -> Ur b) -> b
 withVectorFromList inits f = let 
